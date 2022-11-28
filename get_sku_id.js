@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         GetSKUID
-// @namespace    supermeatboy@getskuid
+// @namespace    https://github.com/gesuper/get_sku_id/blob/main/get_sku_id.js
 // @version      0.1
 // @description  try to take over the world!
 // @author       supermeatboy
