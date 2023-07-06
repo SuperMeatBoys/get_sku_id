@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         GetSKUID
-// @namespace    https://github.com/gesuper/get_sku_id/blob/main/get_sku_id.js
+// @namespace    supermeatboy@getskuid
 // @version      0.1
-// @description  try to take over the world!
+// @description  show sku id for shopee
 // @author       supermeatboy
 // @match        https://shopee.co.id/*
 // @match        https://shopee.co.th/*
@@ -12,6 +12,7 @@
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=shopee.co.id
 // @grant        none
 // @run-at       document-start
+// @license MIT
 // ==/UserScript==
 
 (function() {
@@ -33,10 +34,19 @@
                             if(result.data && result.data.models) {
                                 console.info("hook", result.data.models)
                                 for(let item of result.data.models) {
-                                    skuNameToID[item.name]=item.modelid
+                                    let skuName = item.name
+                                    if(!skuName) {
+                                        skuName = 'default sku'
+                                    }
+                                    skuNameToID[skuName]=item.modelid
                                 }
                                 // 延迟触发显示id
-                                setTimeout(updateSkuId, 1000)
+                                console.info("skuNameToID", skuNameToID)
+                                if(Object.keys(skuNameToID).length > 1) {
+                                    setTimeout(updateSkuId, 1000)
+                                } else {
+                                    setTimeout(updateSkuIdForOneSku, 1000)
+                                }
                             }
                             resolve(result);
                         });
@@ -49,6 +59,29 @@
     window.fetch = fuckfetch;
 
     // Your code here...
+    function buildShowNode() {
+        let newDiv = document.createElement("div");
+        newDiv.style.width = "100%"
+        let newPre = document.createElement("pre");
+        newPre.id = "supermeatboy_sku_map"
+        var jsonText = JSON.stringify(skuNameToID, Object.keys(skuNameToID).sort(), " ")
+        newPre.innerText = jsonText.substring(1, jsonText.length -2);
+        newDiv.appendChild(newPre);
+        return newDiv
+    }
+    function updateSkuIdForOneSku() {
+        if(retryCount > maxRetry) {
+            return
+        }
+        let doms = document.querySelectorAll(".shopee-input-quantity")
+        // 伺机重试
+        if(!doms || doms.length == 0) {
+            setTimeout(updateSkuIdForOneSku, 1000)
+            return
+        }
+        let lastSku = doms[doms.length - 1]
+        lastSku.parentNode.parentNode.parentNode.parentNode.insertBefore(buildShowNode(), undefined);
+    }
     function updateSkuId() {
         if(retryCount > maxRetry) {
             return
@@ -60,14 +93,7 @@
             return
         }
         let lastSku = doms[doms.length - 1]
-        let newDiv = document.createElement("div");
-        newDiv.style.width = "100%"
-        let newPre = document.createElement("pre");
-        newPre.id = "supermeatboy_sku_map"
-        var jsonText = JSON.stringify(skuNameToID, Object.keys(skuNameToID).sort(), " ")
-        newPre.innerText = jsonText.substring(1, jsonText.length -2);
-        newDiv.appendChild(newPre);
-        lastSku.parentNode.appendChild(newDiv);
+        lastSku.parentNode.appendChild(buildShowNode());
         let skuLevelCount = 0
         let skuParentNode = null;
         for(let d of doms) {
